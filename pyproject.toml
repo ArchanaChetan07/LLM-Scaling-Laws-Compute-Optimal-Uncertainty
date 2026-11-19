@@ -1,0 +1,16 @@
+[project]
+name = "scalingci"
+version = "0.1.0"
+description = "Chinchilla-style scaling-law fits with honest uncertainty on Pythia and DataDecide (OLMo) checkpoint suites"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "scipy>=1.11", "pandas>=2.0", "pyarrow", "matplotlib>=3.8"]
+
+[project.optional-dependencies]
+verify = ["torch", "transformers", "zstandard"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

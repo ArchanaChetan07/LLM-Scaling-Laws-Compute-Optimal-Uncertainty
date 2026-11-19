@@ -1,0 +1,239 @@
+<title>Scaling-Law Uncertainty Audit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one 68ch reading column; result cards and figure plates break out to 1040px. */
+:root {
+  --bg: #f6f7f8; --surface: #ffffff; --plate: #fcfcfb; --fg: #14171a; --fg2: #4b535c; --muted: #7b848e;
+  --rule: #dde1e5; --accent: #2a78d6; --pythia: #2a78d6; --dd: #d9581f; --chin: #138a61; --warn: #a15c00;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111417; --surface: #181c20; --plate: #fcfcfb; --fg: #e9ecef; --fg2: #b3bbc4; --muted: #8a939c;
+  --rule: #2a3037; --accent: #5598e7; --pythia: #5598e7; --dd: #ef7a45; --chin: #2bb484; --warn: #e0a040; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111417; --surface: #181c20; --plate: #fcfcfb; --fg: #e9ecef; --fg2: #b3bbc4; --muted: #8a939c;
+  --rule: #2a3037; --accent: #5598e7; --pythia: #5598e7; --dd: #ef7a45; --chin: #2bb484; --warn: #e0a040; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 16px/1.6 var(--body); }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+.col { max-width: 68ch; display: grid; gap: 14px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 46px); letter-spacing: -0.01em; }
+h2 { font-size: 25px; }
+h3 { font-size: 18px; }
+p { margin: 0; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 18px; color: var(--fg2); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; display: grid;
+  gap: 10px; align-content: start; border-top: 3px solid var(--c); }
+.card .suite { font: 600 13px/1 var(--mono); color: var(--c); letter-spacing: 0.04em; text-transform: uppercase; }
+.card .big { font: 500 44px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.card .big small { font-size: 15px; color: var(--fg2); font-family: var(--body); margin-left: 6px; }
+.card .ci { font: 14px/1.4 var(--mono); color: var(--fg2); }
+.card .shift { font-size: 14px; color: var(--fg2); border-top: 1px solid var(--rule); padding-top: 10px; }
+.card .shift b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
+.callout { background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--warn);
+  border-radius: 4px; padding: 16px 18px; color: var(--fg2); }
+.callout b { color: var(--fg); }
+ol.why { margin: 0; padding-left: 1.3em; display: grid; gap: 10px; color: var(--fg2); }
+ol.why b { color: var(--fg); }
+figure { margin: 0; display: grid; gap: 10px; }
+figure .plate { background: var(--plate); border: 1px solid var(--rule); border-radius: 6px; padding: 10px; overflow-x: auto; }
+figure img { display: block; width: 100%; min-width: 560px; height: auto; }
+figcaption { max-width: 68ch; color: var(--fg2); font-size: 15px; }
+figcaption b { color: var(--fg); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 640px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 12px/1.2 var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.formula { font: 15px/1.5 var(--mono); background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 12px 14px; overflow-x: auto; white-space: nowrap; }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; color: var(--fg2); }
+code { font-family: var(--mono); font-size: 0.92em; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--rule); padding-top: 16px; }
+</style>
+
+<main class="wrap">
+  <header class="col">
+    <span class="eyebrow">Chinchilla-style fits · Pythia · DataDecide (OLMo) · bootstrap + multiverse</span>
+    <h1>How many tokens per parameter, and how sure can we be?</h1>
+    <p class="lede">Fitting compute-optimal scaling laws to public checkpoint suites, with intervals that resample
+      whole training runs and a full audit of how far each analyst choice moves the answer.</p>
+  </header>
+
+  <section class="cards" aria-label="Headline results">
+    <article class="card" style="--c: var(--pythia)">
+      <span class="suite">Pythia-deduped · C = 10²¹ FLOPs</span>
+      <span class="big">{{m.approach2.pythia.point.C=1e21:.0f}}<small>tokens / param</small></span>
+      <span class="ci">95% CI {{m.approach2.pythia.boot.cluster_eval.C=1e21.lo:.1f}} – {{m.approach2.pythia.boot.cluster_eval.C=1e21.hi:.0f}}</span>
+      <p class="shift">Restricting to models ≥ 1.4B moves it by <b>{{d.oat.pythia_A2.axes.sizes.max_pct:pct}}</b>.
+        Eval-text noise alone: <span class="num">{{m.approach2.pythia.boot.eval.C=1e21.lo:.1f}}–{{m.approach2.pythia.boot.eval.C=1e21.hi:.1f}}</span>.</p>
+    </article>
+    <article class="card" style="--c: var(--dd)">
+      <span class="suite">DataDecide / Dolma 1.7 · C = 10¹⁹</span>
+      <span class="big">{{m.approach2.datadecide.point.C=1e19:.0f}}<small>tokens / param</small></span>
+      <span class="ci">95% CI {{m.approach2.datadecide.boot.cluster_seed.C=1e19.lo:.1f}} – {{m.approach2.datadecide.boot.cluster_seed.C=1e19.hi:sig2}} · seeds only {{m.approach2.datadecide.boot.seed.C=1e19.lo:.1f}}–{{m.approach2.datadecide.boot.seed.C=1e19.hi:.1f}}</span>
+      <p class="shift">Counting non-embedding parameters moves it by <b>{{d.oat.datadecide_A2.axes.param.max_pct:pct}}</b>.
+        All 25 corpora fall in <span class="num">{{d.corpora.A2_min:.1f}}–{{d.corpora.A2_max:.1f}}</span>.</p>
+    </article>
+    <article class="card" style="--c: var(--chin)">
+      <span class="suite">Chinchilla (Epoch-extracted) · C = 10²¹</span>
+      <span class="big">{{m.approach3.chinchilla.point.C=1e21:.0f}}<small>tokens / param</small></span>
+      <span class="ci">95% CI {{m.approach3.chinchilla.boot.iid.C=1e21.lo:.1f}} – {{m.approach3.chinchilla.boot.iid.C=1e21.hi:.1f}} · at 5.76×10²³: {{m.approach3.chinchilla.point.C=5~76e23:.0f}}</span>
+      <p class="shift">Our fitter reproduces Besiroglu et al. (2024) to within 0.2% on every parameter. Doing so needs Huber
+        <b>δ ≈ 10⁻⁵</b>, not the published 10⁻³.</p>
+    </article>
+  </section>
+
+  <div class="col">
+    <p class="callout"><b>The parametric law is not identified on these suites.</b> Fitted to the same DataDecide
+      checkpoints, Chinchilla's Approach 3 returns <span class="num">{{m.approach3.datadecide.point.C=1e19:.1f}}</span> tokens/param
+      with the irreducible loss E pinned at its bound. Switching the learning-rate-schedule correction off moves it to
+      <span class="num">{{d.oat.datadecide_A3.axes.schedule.r:.0f}}</span>. All headline numbers above use IsoFLOP profiles
+      (Approach 2), which make no functional-form assumption.</p>
+  </div>
+
+  <section class="col">
+    <h2>Why checkpoint suites are hard</h2>
+    <ol class="why">
+      <li><b>A checkpoint is not a shorter run.</b> Mid-schedule the learning rate is still high, so loss sits above
+        what a run annealed at that length reaches. Chinchilla trained separate runs; public suites release one run per size.</li>
+      <li><b>In Pythia the schedule confound cannot be estimated.</b> Every run ends at 300B tokens, so run fraction
+        f = D / 300B is a function of D alone, and any schedule effect is absorbed into B·D<sup>−β</sup>.
+        DataDecide ends each run at 100 tokens/param (f = D / 100N), which is identifiable, but weakly.</li>
+      <li><b>Checkpoints are not independent.</b> Consecutive checkpoints share initialisation, data order and
+        optimiser state. Bootstrapping them i.i.d. treats ~800 correlated points as independent evidence.</li>
+    </ol>
+  </section>
+
+  <figure>
+    <div class="plate"><img alt="Forest plot of 95% intervals for compute-optimal tokens per parameter under each bootstrap scheme" src="{{img:fig2_bootstrap_schemes.png}}"></div>
+    <figcaption><b>What you resample decides how certain you look.</b> Same data, same fit, different resampling
+      unit. Grey: i.i.d. checkpoints, evaluation text or seeds only. Colour: resampling which model sizes were trained.
+      For the Pythia parametric fit the interval widens from <span class="num">{{m.approach3.pythia.boot.iid.C=1e21.lo:.0f}}–{{m.approach3.pythia.boot.iid.C=1e21.hi:.0f}}</span>
+      to <span class="num">{{m.approach3.pythia.boot.cluster_eval.C=1e21.lo:.0f}}–{{m.approach3.pythia.boot.cluster_eval.C=1e21.hi:.0f}}</span>.
+      On synthetic suites with correlated checkpoint noise, the i.i.d. 95% interval covers the truth
+      <span class="num">{{d.coverage.4.coverage:.0%}}</span> of the time; the size-cluster interval covers <span class="num">{{d.coverage.5.coverage:.0%}}</span>.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="plate"><img alt="Compute-optimal ratio as a function of training compute with bootstrap bands" src="{{img:fig3_ratio_vs_compute.png}}"></div>
+    <figcaption><b>A ratio only exists at a stated compute.</b> With α ≠ β the optimum drifts with C. Pythia's parametric
+      fit gives <span class="num">{{m.approach3.pythia.point.C=5~76e23:.0f}}</span> tokens/param at Chinchilla-70B compute,
+      with a 95% interval of <span class="num">{{m.approach3.pythia.boot.cluster_eval.C=5~76e23.lo:.2f}}–{{m.approach3.pythia.boot.cluster_eval.C=5~76e23.hi:sig2}}</span>.
+      Extrapolating ~30× past the largest run carries essentially no information.</figcaption>
+  </figure>
+
+  <section class="col">
+    <h2>What moves the answer</h2>
+    <p>Each row changes one analyst choice from the baseline and reports the largest shift it produces.</p>
+  </section>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Suite · estimator</th><th>Baseline</th><th>Largest single-choice shifts</th></tr></thead>
+      <tbody>
+        <tr><td>Pythia · IsoFLOP, C=10²¹</td><td class="n">{{d.oat.pythia_A2.baseline:.1f}}</td>
+          <td>sizes ≥ 1.4B <b class="num">{{d.oat.pythia_A2.axes.sizes.max_pct:pct}}</b> · param counting <span class="num">{{d.oat.pythia_A2.axes.param.max_pct:pct}}</span> · tail <span class="num">{{d.oat.pythia_A2.axes.tail.max_pct:pct}}</span> · fit start ≥ 25%: no estimate</td></tr>
+        <tr><td>Pythia · parametric, C=10²¹</td><td class="n">{{d.oat.pythia_A3.baseline:.1f}}</td>
+          <td>sizes ≥ 1.4B <b class="num">{{d.oat.pythia_A3.axes.sizes.max_pct:pct}}</b> · fit start 50% <span class="num">{{d.oat.pythia_A3.axes.start.max_pct:pct}}</span> · per-run weighting <span class="num">{{d.oat.pythia_A3.axes.weight.max_pct:pct}}</span></td></tr>
+        <tr><td>DataDecide · IsoFLOP, C=10¹⁹</td><td class="n">{{d.oat.datadecide_A2.baseline:.1f}}</td>
+          <td>non-embedding params <b class="num">{{d.oat.datadecide_A2.axes.param.max_pct:pct}}</b> · schedule off <span class="num">{{d.oat.datadecide_A2.axes.schedule.max_pct:pct}}</span> · eval set ≤ <span class="num">{{d.oat.datadecide_A2.axes.eval.max_pct:pct}}</span></td></tr>
+        <tr><td>DataDecide · parametric, C=10¹⁹</td><td class="n">{{d.oat.datadecide_A3.baseline:.1f}}</td>
+          <td>schedule off <b class="num">×{{d.oat.datadecide_A3.axes.schedule.factor:.0f}}</b> · fit start 50% <span class="num">×{{d.oat.datadecide_A3.axes.start.factor:.0f}}</span> · non-embedding params <span class="num">×{{d.oat.datadecide_A3.axes.param.factor:.1f}}</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <div class="plate"><img alt="One-at-a-time specification curve for both suites and both estimators" src="{{img:fig4_one_at_a_time.png}}"></div>
+    <figcaption><b>One choice at a time</b>, with 95% intervals from resampling model sizes. Hollow markers hit a
+      parameter bound. Both IsoFLOP estimates fail when the fit starts at 25% of each run or later, because the
+      compute ranges of different sizes stop overlapping.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="plate"><img alt="Histograms of compute-optimal ratio across all factorial specifications" src="{{img:fig5_factorial.png}}"></div>
+    <figcaption><b>Every combination.</b> Pythia: {{d.factorial.pythia.n_interior:,}} interior fits out of
+      {{d.factorial.pythia.n_specs:,}} specifications, median <span class="num">{{d.factorial.pythia.q50:.0f}}</span>, with
+      only {{d.factorial.pythia.frac_within_2x_of_20:.0%}} within 2× of 20. DataDecide: {{d.factorial.datadecide.n_interior:,}} of
+      {{d.factorial.datadecide.n_specs:,}}, median <span class="num">{{d.factorial.datadecide.q50:,.0f}}</span>. The choices that matter are fit start, tail
+      handling (Pythia ×{{d.factorial.main_effects.pythia.tail:.0f}}), the schedule term (DataDecide ×{{d.factorial.main_effects.datadecide.schedule:.0f}})
+      and parameter counting (×{{d.factorial.main_effects.datadecide.param:.0f}}). The loss function, the focus of the
+      Chinchilla replication debate, moves it by ×{{d.factorial.main_effects.pythia.loss:.1f}} / ×{{d.factorial.main_effects.datadecide.loss:.1f}}.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="plate"><img alt="Compute-optimal ratio for each of 25 DataDecide pretraining corpora" src="{{img:fig6_corpora.png}}"></div>
+    <figcaption><b>Same models, 25 corpora.</b> The IsoFLOP ratio at 10¹⁹ ranges from {{d.corpora.A2_min:.1f}}
+      ({{d.corpora.A2_argmin}}) to {{d.corpora.A2_max:.1f}} ({{d.corpora.A2_argmax}}). Within this suite the corpus
+      matters less than whether embeddings are counted. The parametric fit sits at a bound for {{d.corpora.A3_frac_at_bound:.0%}} of corpora.</figcaption>
+  </figure>
+
+  <section class="col">
+    <h2>Method</h2>
+    <div class="formula">L(N, D, f) = E + A·N<sup>−α</sup> + B·D<sup>−β</sup> + K·[η(f) − η(1)] / 10⁻³ &nbsp;&nbsp;·&nbsp;&nbsp; r(C) = G<sup>−2</sup>(C/6)<sup>(α−β)/(α+β)</sup></div>
+    <ul class="plain">
+      <li><b>Fit:</b> log-sum-exp parameterisation, Huber δ = 10⁻³ on log-residuals, L-BFGS-B from the best points of
+        Hoffmann's 4,500-point grid, analytic gradients checked against finite differences.</li>
+      <li><b>Schedule term (DataDecide):</b> η is the absolute learning rate (cosine to 1% of peak, peak ∝ N<sup>−1/3</sup>).
+        Fit on checkpoints up to 70% of each run, predict every final loss: log-MAE
+        <span class="num">{{d.schedule_oos.4.final_mae_log:.3f}} → {{d.schedule_oos.5.final_mae_log:.3f}}</span>.</li>
+      <li><b>IsoFLOP from checkpoints:</b> interpolate each run at fixed C = 6ND, parabola in log N around the minimum,
+        keep interior minima, fit N<sub>opt</sub> ∝ C<sup>a</sup>.</li>
+      <li><b>Bootstrap units:</b> checkpoints, evaluation sequences (paired across sizes), seeds within size, model sizes,
+        and combinations. B = 1,000 for headlines, 200 per one-at-a-time specification.</li>
+      <li><b>Multiverse:</b> loss function, parameter counting, size subset, fit start, tail handling, checkpoint
+        weighting, α = β, schedule term, evaluation set; {{d.factorial.pythia.n_specs:,}} + {{d.factorial.datadecide.n_specs:,}} factorial specifications.</li>
+    </ul>
+  </section>
+
+  <section class="col">
+    <h2>Data checks</h2>
+    <p>Pythia's small deduped models get worse late in training, which decides which checkpoints a fit may use.
+      We re-measured that on our own Pile-validation sample on a T1000 GPU.</p>
+  </section>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Model</th><th>Steps</th><th>Our Δ loss (nats)</th><th>Released data Δ loss</th></tr></thead>
+      <tbody>
+        <tr><td>Pythia-70M</td><td class="n">21k → 143k</td><td class="n">{{d.verification.0.ours_delta:+.2f}} ± {{d.verification.0.ours_delta_se:.2f}}</td><td class="n">{{d.verification.0.lesci_delta:+.2f}}</td></tr>
+        <tr><td>Pythia-160M</td><td class="n">55k → 143k</td><td class="n">{{d.verification.1.ours_delta:+.2f}} ± {{d.verification.1.ours_delta_se:.2f}}</td><td class="n">{{d.verification.1.lesci_delta:+.2f}}</td></tr>
+        <tr><td>Pythia-410M</td><td class="n">33k → 68k</td><td class="n">{{d.verification.3.ours_delta:+.3f}} ± {{d.verification.3.ours_delta_se:.3f}}</td><td class="n">{{d.verification.3.lesci_delta:+.3f}}</td></tr>
+        <tr><td>Pythia-410M</td><td class="n">68k → 143k</td><td class="n">{{d.verification.2.ours_delta:+.3f}} ± {{d.verification.2.ours_delta_se:.3f}}</td><td class="n">{{d.verification.2.lesci_delta:+.2f}}</td></tr>
+        <tr><td>Pythia-1.4B</td><td class="n">83k → 143k</td><td class="n">{{d.verification.4.ours_delta:+.3f}} ± {{d.verification.4.ours_delta_se:.3f}}</td><td class="n">{{d.verification.4.lesci_delta:+.2f}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>The degradation is real for 70M and 160M, but the released data overstate it about 4–5×. The late rise the released
+      data show for 410M and 1.4B does not reproduce: we measure a small decrease for both. Every baseline fit therefore stops each run at its smoothed loss minimum.</p>
+  </div>
+
+  <section class="col">
+    <h2>Limits</h2>
+    <ul class="plain">
+      <li>Pythia has seven sizes (no 1B split was released), so the size bootstrap is itself approximate;
+        {{m.approach2.pythia.boot.cluster_eval.valid_frac:.0%}} of resamples yield an interior IsoFLOP minimum.</li>
+      <li>The schedule term assumes excess loss proportional to the current learning rate, with no lag and one global K.
+        It is validated out of sample, not derived.</li>
+      <li>Pythia's IsoFLOP estimate still carries schedule bias that no fit on this suite can remove.</li>
+      <li>C = 6ND ignores attention FLOPs. DataDecide's smallest models are embedding-dominated, which is why parameter counting matters there.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Data: Lesci et al. 2024 (Pythia per-sequence losses), AI2 DataDecide, Epoch's extraction of Hoffmann et al. Fig. 4.
+    Code: <code>scaling-law-ci</code>, every number on this page rendered from <code>results/metrics.json</code> and <code>results/derived.json</code>.
+  </footer>
+</main>
